@@ -274,7 +274,7 @@
       </div>
     </div>
   </div>
-  <footer>Drag / move over Tokkun's belly to grate the daikon</footer>
+  <footer id="pageFooter">Drag / move over Tokkun's belly to grate the daikon</footer>
 </div>
 
 <script>
@@ -284,8 +284,13 @@
   ];
 
   const stage = document.getElementById('stage');
+  const app = document.getElementById('app');
+  const characterWrap = document.getElementById('characterWrap');
+  const tokkun = document.getElementById('tokkun');
   const daikon = document.getElementById('daikon');
   const plate = document.getElementById('plate');
+  const timerWrap = document.getElementById('timerWrap');
+  const pageFooter = document.getElementById('pageFooter');
   const strokeCountEl = document.getElementById('strokeCount');
   const stageCountEl = document.getElementById('stageCount');
   const resetBtn = document.getElementById('resetBtn');
@@ -329,6 +334,46 @@
     daikonX = clamp(daikonX || (zone.xMin+zone.xMax)/2, zone.xMin, zone.xMax);
     daikonY = (zone.yMin + zone.yMax)/2;
     updateDaikonPosition(daikonX, daikonY);
+  }
+
+  const PLATE_WIDTH_FACTOR = 0.68; // #plate の width (CSSの68%と合わせる)
+  const STACK_GAP = 4;             // characterWrapとplateの間の margin-top と合わせる
+  const MIN_STAGE_WIDTH = 170;
+
+  // 画面の「横幅」と「縦の余白」の両方に収まるように、とっくんの表示サイズ(#stageの幅)を計算する。
+  // これにより、背の低いスマホ(iPhone SEなど)でもキャラクターと受け皿が重ならず、
+  // 画面内にきれいに収まるようにする。
+  function sizeStage(){
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // stageより上にある要素(タイトル・HUD・タイマーバーなど)の高さを実測
+    const appTop = app.getBoundingClientRect().top;
+    const timerBottom = timerWrap.getBoundingClientRect().bottom;
+    const headerHeight = timerBottom - appTop;
+    const footerHeight = pageFooter.getBoundingClientRect().height;
+    const verticalMargin = 24; // 上下の余白・保険分
+
+    const availableHeight = vh - headerHeight - footerHeight - verticalMargin;
+
+    const tW = tokkun.naturalWidth || 2360;
+    const tH = tokkun.naturalHeight || 1640;
+    const pW = plate.naturalWidth || 803;
+    const pH = plate.naturalHeight || 1223;
+
+    // stage幅を1としたときの合計の高さ（tokkun分 + plate分 + すき間）
+    const heightPerWidth = (tH / tW) + PLATE_WIDTH_FACTOR * (pH / pW);
+
+    const widthFromVW = Math.min(vw * 0.9, 380);
+    const widthFromHeight = (availableHeight - STACK_GAP) / heightPerWidth;
+
+    const finalWidth = Math.max(
+      MIN_STAGE_WIDTH,
+      Math.min(widthFromVW, widthFromHeight)
+    );
+
+    stage.style.width = finalWidth + 'px';
+    recalcLayout();
   }
 
   let strokes = 0;
@@ -553,13 +598,20 @@
 
   resetBtn.addEventListener('click', resetGame);
 
-  // レイアウトのずれ対策：画面回転・リサイズ・画像ロード完了時に再計算
-  window.addEventListener('resize', recalcLayout);
-  window.addEventListener('orientationchange', recalcLayout);
-  if(tokkun.complete){ recalcLayout(); } else { tokkun.addEventListener('load', recalcLayout); }
+  // レイアウトのずれ対策：画面回転・リサイズ・画像ロード完了時に、
+  // 画面の横幅と縦の余白の両方を見てステージサイズを再計算する。
+  let resizeRAF = null;
+  function onViewportChange(){
+    if(resizeRAF) cancelAnimationFrame(resizeRAF);
+    resizeRAF = requestAnimationFrame(sizeStage);
+  }
+  window.addEventListener('resize', onViewportChange);
+  window.addEventListener('orientationchange', onViewportChange);
+  if(tokkun.complete){ sizeStage(); } else { tokkun.addEventListener('load', sizeStage); }
+  if(plate.complete){ sizeStage(); } else { plate.addEventListener('load', sizeStage); }
 
   // init
-  recalcLayout();
+  sizeStage();
   startTimer();
 })();
 </script>
