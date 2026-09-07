@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>とっくんの助骨で大根をおろすゲーム</title>
+<meta name="robots" content="noindex, nofollow">
 <style>
   :root{
     --bg1:#eaf5fb;
@@ -14,7 +15,7 @@
     margin:0; padding:0; min-height:100%;
     font-family: "Hiragino Maru Gothic ProN","Yu Gothic","Meiryo",sans-serif;
     background: radial-gradient(circle at 50% 0%, var(--bg2), var(--bg1) 70%);
-    overflow-y:auto;
+    overflow-y:hidden;
     overflow-x:hidden;
     color:#2c4a5e;
     user-select:none;
@@ -48,10 +49,8 @@
     font-size: clamp(11px, 3.4vw, 13px);
     flex-wrap: nowrap;
     justify-content:center;
-    padding: 0 8px;
+    padding: 0 8px 6px 8px;
     max-width: 100%;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
   }
   #hud .chip{
     background:#eef8ff;
@@ -155,11 +154,11 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    margin-top: 15px;
   }
   #characterWrap{
     position:relative;
     width: 100%;
+    padding-top: 22%; /* 大根がタイマーバーにかぶらないよう、キャラクターと大根を下にずらす余白 */
     z-index: 1;
   }
   #plate{
@@ -265,7 +264,7 @@
     <div id="timerBarBg"><div id="timerBarFill"></div></div>
   </div>
   <div id="bannerSlot">
-    <div id="status-banner">おろしMAX！ とっくん、がんばったね</div>
+    <div id="status-banner">おろしMAX！がんばったね、とっくん</div>
   </div>
   <div id="stage">
     <div id="characterWrap">
@@ -345,6 +344,7 @@
 
   const PLATE_WIDTH_FACTOR = 0.72; // #plate の width (CSSの72%と合わせる)
   const STACK_GAP = -10;           // characterWrapとplateの間の margin-top と合わせる（近づける）
+  const CHAR_TOP_BUFFER = 0.22;    // #characterWrap の padding-top(22%)と合わせる（大根がタイマーにかぶらないための余白）
   const MIN_STAGE_WIDTH = 170;
 
   // 画面の「横幅」と「縦の余白」の両方に収まるように、とっくんの表示サイズ(#stageの幅)を計算する。
@@ -359,7 +359,7 @@
     const timerBottom = timerWrap.getBoundingClientRect().bottom;
     const headerHeight = timerBottom - appTop;
     const footerHeight = pageFooter.getBoundingClientRect().height;
-    const verticalMargin = 14; // 上下の余白・保険分
+    const verticalMargin = 20; // 上下の余白・保険分
 
     const availableHeight = vh - headerHeight - footerHeight - verticalMargin;
 
@@ -368,8 +368,8 @@
     const pW = plate.naturalWidth || 620;
     const pH = plate.naturalHeight || 601;
 
-    // stage幅を1としたときの合計の高さ（tokkun分 + plate分 + すき間）
-    const heightPerWidth = (tH / tW) + PLATE_WIDTH_FACTOR * (pH / pW);
+    // stage幅を1としたときの合計の高さ（上の余白 + tokkun分 + plate分 + すき間）
+    const heightPerWidth = CHAR_TOP_BUFFER + (tH / tW) + PLATE_WIDTH_FACTOR * (pH / pW);
 
     const widthFromVW = Math.min(vw * 0.95, 460);
     const widthFromHeight = (availableHeight - STACK_GAP) / heightPerWidth;
@@ -434,7 +434,7 @@
         { transform:'scale(1)' }
       ], { duration:220, easing:'ease-out' });
       if(currentStage === MAX_STAGE){
-        showBanner('おろしMAX！ とっくん、がんばった！', 1800);
+        showBanner('おろしMAX！がんばったね、とっくん', 1800);
       }
     }
     stageCountEl.textContent = currentStage;
@@ -600,6 +600,7 @@
     document.querySelectorAll('.particle').forEach(p=>p.remove());
     statusBanner.classList.remove('show');
     timeupOverlay.classList.remove('show');
+    sizeStage();
     startTimer();
   }
 
