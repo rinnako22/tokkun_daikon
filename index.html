@@ -6,8 +6,8 @@
 <title>とっくんの助骨で大根をおろすゲーム</title>
 <style>
   :root{
-  --bg1:#afd0e5;
-  --bg2:#78afd0;
+    --bg1:#1e4b70;
+    --bg2:#3f7fac;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{
@@ -16,7 +16,7 @@
     background: radial-gradient(circle at 50% 0%, var(--bg2), var(--bg1) 70%);
     overflow-y:hidden;
     overflow-x:hidden;
-    color:#2c4a5e;
+    color:#eaf5fb;
     user-select:none;
   }
   #app{
@@ -31,13 +31,13 @@
     margin: 4px 0 2px 0;
     letter-spacing: 1px;
     color:#ffffff;
-    /* text-shadow: 1px 1px 0 #eef8ff; */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.45);
     text-align:center;
     padding: 0 10px;
   }
   #sub{
     font-size: 13px;
-    color:#ffffff;
+    color:#a9d3ec;
     margin-bottom: 6px;
   }
   #hud{
@@ -52,31 +52,31 @@
     max-width: 100%;
   }
   #hud .chip{
-    background:#eef8ff;
-    border: 2px solid #8fc6e8;
+    background:rgba(255,255,255,0.14);
+    border: 2px solid #6fb3de;
     border-radius: 999px;
     padding: 4px 10px;
     font-weight:bold;
-    color:#1f5c8b;
-    box-shadow: 0 2px 0 #5fa8d3;
+    color:#eaf5fb;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.35);
     white-space:nowrap;
     flex-shrink:0;
   }
   #resetBtn{
-    background:#1f5c8b;
-    color:#eef8ff;
+    background:#2f8fd6;
+    color:#ffffff;
     border:none;
     border-radius: 999px;
     padding: 6px 14px;
     font-size: clamp(11px, 3.4vw, 13px);
     font-weight:bold;
     cursor:pointer;
-    box-shadow: 0 3px 0 #123a58;
+    box-shadow: 0 3px 0 #0d3a5c;
     white-space:nowrap;
     flex-shrink:0;
   }
   #resetBtn:active{
-    box-shadow: 0 1px 0 #123a58;
+    box-shadow: 0 1px 0 #0d3a5c;
     transform: translateY(2px);
   }
   #timerWrap{
@@ -88,31 +88,31 @@
     display:flex;
     justify-content:space-between;
     font-size: 11px;
-    color:#3d7ba3;
+    color:#bcdcf0;
     margin-bottom:2px;
     font-weight:bold;
   }
   #timerBarBg{
     width:100%;
     height: 14px;
-    background:#dceefb;
-    border: 2px solid #8fc6e8;
+    background:rgba(255,255,255,0.15);
+    border: 2px solid #6fb3de;
     border-radius: 999px;
     overflow:hidden;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.12);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
   }
   #timerBarFill{
     height:100%;
     width:100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #4fa8dd, #1f5c8b);
+    background: linear-gradient(90deg, #6fc3f2, #2f8fd6);
     transition: width 0.1s linear, background 0.3s ease;
   }
   #timerBarFill.warn{
-    background: linear-gradient(90deg, #e0a13f, #c96a1f);
+    background: linear-gradient(90deg, #f0b95a, #c96a1f);
   }
   #timerBarFill.danger{
-    background: linear-gradient(90deg, #e06a5f, #c23b2f);
+    background: linear-gradient(90deg, #f0857a, #c23b2f);
   }
   #bannerSlot{
     width: 100%;
@@ -131,7 +131,7 @@
     font-size:14px;
     font-weight:bold;
     color:#1f5c8b;
-    box-shadow:0 4px 10px rgba(0,0,0,0.18);
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);
     z-index: 10;
     opacity:0;
     transform: translateY(-6px) scale(0.85);
@@ -198,7 +198,7 @@
     left:50%;
     transform: translateX(-50%);
     font-size: 12px;
-    color:#6fa8c9;
+    color:#9fd4f0;
     z-index: 6;
     pointer-events:none;
     white-space:nowrap;
@@ -211,7 +211,7 @@
   #timeup-overlay{
     position:absolute;
     inset:0;
-    background: rgba(234,245,251,0.55);
+    background: rgba(6,22,36,0.6);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -244,7 +244,7 @@
   }
   footer{
     font-size:11px;
-    color:#7fa9c2;
+    color:#8fbede;
     margin-top:4px;
   }
 </style>
@@ -319,6 +319,7 @@
   // Belly zone（グレーティングゾーン）。#stage内のtokkun画像の実測サイズから毎回計算するので、
   // 画面幅（スマホ／PC）が変わっても、とっくんの体の位置とズレない。
   let zone = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
+  let charArea = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 }; // キャラクター自体の範囲（この外ではカーソルを動かしても大根は動かない）
   let TIP_Y = 0; // だいこんの先端をここに合わせる（キャラクターの中心）
 
   function recalcLayout(){
@@ -334,6 +335,15 @@
       xMax: localLeft + w * 0.78,
       yMin: localTop + h * 0.33,
       yMax: localTop + h * 0.53
+    };
+    // キャラクター画像の実際の表示範囲に、少しだけ操作の余裕（4%）を持たせた範囲。
+    // ここから外に出たら、大根はカーソルに追従しない。
+    const pad = w * 0.04;
+    charArea = {
+      xMin: localLeft - pad,
+      xMax: localLeft + w + pad,
+      yMin: localTop - pad,
+      yMax: localTop + h + pad
     };
     TIP_Y = localTop + h * 0.5;
     daikonX = clamp(daikonX || (zone.xMin+zone.xMax)/2, zone.xMin, zone.xMax);
@@ -480,6 +490,13 @@
     const x = (clientX - rect.left) * scaleX;
     const y = (clientY - rect.top) * scaleY;
 
+    // キャラクターの外にカーソルがあるときは、大根は一切動かさない
+    const onCharacter = x >= charArea.xMin && x <= charArea.xMax && y >= charArea.yMin && y <= charArea.yMax;
+    if(!onCharacter){
+      lastX = null; lastY = null; lastDir = 0; distSinceReversal = 0;
+      return;
+    }
+
     updateDaikonPosition(x, y);
 
     const inZone = x >= zone.xMin-10 && x <= zone.xMax+10 && y >= zone.yMin-40 && y <= zone.yMax+40;
@@ -535,8 +552,15 @@
       const rect = stage.getBoundingClientRect();
       const scaleX = stage.offsetWidth / rect.width;
       const scaleY = stage.offsetHeight / rect.height;
-      lastX = (t.clientX - rect.left) * scaleX;
-      lastY = (t.clientY - rect.top) * scaleY;
+      const x = (t.clientX - rect.left) * scaleX;
+      const y = (t.clientY - rect.top) * scaleY;
+      const onCharacter = x >= charArea.xMin && x <= charArea.xMax && y >= charArea.yMin && y <= charArea.yMax;
+      if(!onCharacter){
+        lastX = null; lastY = null;
+        return;
+      }
+      lastX = x;
+      lastY = y;
       updateDaikonPosition(lastX, lastY);
     }
   }, { passive:true });
